@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Draw a waveform and hear how it sounds!"/>
+    <meta name="keywords" content="Sound, waveform, draw waveform, hear waveform">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hear waveform</title>
+</head>
+<body>
+<div class="main">
+    <h1>Hear waveforms</h1>
+    <h3>Draw a waveform and hear how it sounds!</h3>
+    <h5>By spessasus</h5>
+    <canvas id="waveform" width="800" height="400"></canvas>
+    <h2 id="clear" class="button">Clear</h2>
+
+    <div class="inline">
+        <label for="frequency">Frequency</label>
+        <input type="range" min="25" max="1000" value="440" id="frequency">
+    </div>
+
+    <div class="space">
+        <h2 id="square" class="button">Square</h2>
+        <h2 id="saw" class="button">Saw</h2>
+        <h2 id="sine" class="button">Sine</h2>
+    </div>
+
+</div>
+<script src="js/main.js" type="module"></script>
+</body>
+</html>
