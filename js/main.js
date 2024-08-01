@@ -1,10 +1,14 @@
 import {getLinear} from "./interpolated.js";
 
 const canvas = document.getElementById("waveform");
+const startInput = document.getElementById("start");
+const endInput = document.getElementById("end");
 /**
  * @type {CanvasRenderingContext2D}
  */
 const context = canvas.getContext("2d");
+context.strokeStyle = "white";
+context.lineWidth = 2;
 
 const initial = [
     {progress: 0, value: 0},
@@ -86,22 +90,26 @@ function setWaveform(data)
             worklet.port.postMessage({type: 0, data: waveform});
         }
         renderWaveform(waveform);
+        startInput.value = data[0].value * -1000;
+        endInput.value = data[data.length - 1].value * -1000;
     });
 }
 
 /**
  * @param waveform {Waveform}
+ * @param clear {boolean}
  */
-function renderWaveform(waveform)
+function renderWaveform(waveform, clear = true)
 {
     const width = canvas.width;
     const height = canvas.height;
-    context.clearRect(0, 0, width, height);
+    if(clear)
+    {
+        context.clearRect(0, 0, width, height);
+    }
     const multiplier = height / 2;
     const offset = height / 2;
     context.moveTo(0, waveform[0].progress * multiplier + offset);
-    context.strokeStyle = "white";
-    context.lineWidth = 2;
     context.beginPath();
     for (let i = 0; i < width; i++)
     {
@@ -117,6 +125,28 @@ function renderWaveform(waveform)
     }
 }
 
+canvas.onmousemove = async e => {
+    const rect = canvas.getBoundingClientRect();
+    const relativeX = e.clientX - rect.left;
+    const relativeY = e.clientY - rect.top;
+    const value = (relativeY / rect.height) * 2 - 1;
+    const form = {
+        value: value,
+        progress: relativeX / rect.width
+    }
+    const copied = waveform.slice();
+    copied.push(form);
+    copied.sort((a, b) => a.progress - b.progress);
+    context.strokeStyle = "yellow";
+    renderWaveform(copied);
+    context.strokeStyle = "white";
+    renderWaveform(waveform, false);
+}
+
+canvas.onmouseleave = () => {
+    renderWaveform(waveform);
+}
+
 canvas.onclick = async e => {
     await ensureContext();
     const rect = canvas.getBoundingClientRect();
@@ -129,6 +159,26 @@ canvas.onclick = async e => {
     }
     addToWaveform(form);
 
+}
+
+startInput.oninput = async () => {
+    await ensureContext();
+    waveform[0].value = startInput.value / -1000;
+    renderWaveform(waveform);
+    if(worklet)
+    {
+        worklet.port.postMessage({type: 0, data: waveform});
+    }
+}
+
+endInput.oninput = async () => {
+    await ensureContext();
+    waveform[waveform.length - 1].value = endInput.value / -1000;
+    renderWaveform(waveform);
+    if(worklet)
+    {
+        worklet.port.postMessage({type: 0, data: waveform});
+    }
 }
 
 document.getElementById("clear").onclick = () => {

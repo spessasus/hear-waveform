@@ -13,7 +13,11 @@
     <h1>Hear waveforms</h1>
     <h3>Draw a waveform and hear how it sounds!</h3>
     <h5>By spessasus</h5>
-    <canvas id="waveform" width="800" height="400"></canvas>
+    <div class="canvas">
+        <input type="range" min="-1000" max="1000" value="0" id="start">
+        <canvas id="waveform" width="800" height="400"></canvas>
+        <input type="range" min="-1000" max="1000" value="0" id="end">
+    </div>
     <h2 id="clear" class="button">Clear</h2>
 
     <div class="inline">
