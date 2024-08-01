@@ -28,7 +28,8 @@ body {
 }
 
 .canvas input{
-    writing-mode: sideways-lr;
+    writing-mode: vertical-lr;
+    transform: rotate(180deg);
 }
 #waveform{
     background: black;
@@ -37,6 +38,7 @@ body {
     box-shadow: 0 0 15px black;
     cursor: pointer;
     width: 100%;
+    min-width: 0;
 }
 
 .button{
@@ -46,7 +48,10 @@ body {
     border-radius: 1rem;
     box-shadow: 0 0 15px black;
     transition: transform 0.1s ease;
-    margin: 1rem;
+    margin: 0.3rem;
+    border: none;
+    font-size: 1.3rem;
+    font-weight: bold;
 }
 
 .button:active{
@@ -59,14 +64,20 @@ label{
 }
 
 .inline{
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
+    margin: 0.5rem;
+}
+
+.inline input{
+    flex: 1;
 }
 
 .space{
     display: flex;
-    justify-content: space-around;
-    width: 50%;
+    justify-content: center;
+    width: fit-content;
     flex-wrap: wrap;
 }

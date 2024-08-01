@@ -3,6 +3,10 @@ import {getLinear} from "./interpolated.js";
 const canvas = document.getElementById("waveform");
 const startInput = document.getElementById("start");
 const endInput = document.getElementById("end");
+const frequency = document.getElementById("frequency");
+const volume = document.getElementById("volume");
+startInput.value = 0;
+endInput.value = 0;
 /**
  * @type {CanvasRenderingContext2D}
  */
@@ -38,6 +42,12 @@ for (let i = 0; i < sinLen; i++)
     });
 }
 console.log(sine)
+
+/**
+ *
+ * @type {Waveform[]}
+ */
+let history = [];
 
 /**
  * @type {Waveform}
@@ -76,6 +86,7 @@ function addToWaveform(data)
         worklet.port.postMessage({type: 0, data: waveform});
     }
     renderWaveform(waveform);
+    history.push(structuredClone(waveform));
 }
 
 /**
@@ -158,11 +169,9 @@ canvas.onclick = async e => {
         progress: relativeX / rect.width
     }
     addToWaveform(form);
-
 }
 
 startInput.oninput = async () => {
-    await ensureContext();
     waveform[0].value = startInput.value / -1000;
     renderWaveform(waveform);
     if(worklet)
@@ -172,7 +181,6 @@ startInput.oninput = async () => {
 }
 
 endInput.oninput = async () => {
-    await ensureContext();
     waveform[waveform.length - 1].value = endInput.value / -1000;
     renderWaveform(waveform);
     if(worklet)
@@ -182,14 +190,96 @@ endInput.oninput = async () => {
 }
 
 document.getElementById("clear").onclick = () => {
+    history = [];
     setWaveform(structuredClone(initial));
+}
+
+document.getElementById("undo").onclick = () => {
+    history.pop()
+    if(history.length <= 0)
+    {
+        setWaveform(structuredClone(initial));
+        return;
+    }
+    setWaveform(structuredClone(history[history.length - 1]));
+}
+
+let hasMid = false;
+let midShown = false;
+
+document.getElementById("midi").onclick = async () => {
+    const select = document.getElementById("midi_in");
+    midShown = !midShown;
+    select.style.display = midShown ? "block" : "none";
+    if(hasMid)
+    {
+        return;
+    }
+    const access = await navigator.requestMIDIAccess({
+        software: true
+    });
+    access.inputs.forEach(input => {
+        const option = document.createElement("option");
+        option.textContent = input.name;
+        option.value = input.id;
+        console.log(input.name, input.type, input.manufacturer, input.version)
+        select.appendChild(option);
+    });
+    hasMid = true;
+    select.onchange = () => {
+        access.inputs.forEach(input => {
+            input.onmidimessage = undefined;
+        })
+        if(select.value === "-1")
+        {
+            return;
+        }
+        const input = access.inputs.get(select.value);
+        worklet.port.postMessage({type: 2, data: 0});
+        input.onmidimessage = e => {
+            const ch = e.data[0] & 0xF;
+            if(ch === 9)
+            {
+                return;
+            }
+            const status = e.data[0] & 0xF0;
+            const note = e.data[1];
+            const freq = 440 * Math.pow(2, (note - 69) / 12);
+            if (status === 0x90)
+            {
+                const vol = e.data[2] / 1.27;
+                frequency.value = Math.floor(freq);
+                volume.value = vol;
+                if(worklet)
+                {
+                    worklet.port.postMessage({type: 3, data: [ch, vol, freq, note]});
+                }
+            }
+            else if(status === 0x80)
+            {
+                volume.value = 0;
+                if(worklet)
+                {
+                    worklet.port.postMessage({type: 3, data: [ch, 0, freq, note]});
+                }
+            }
+        }
+    }
+
 }
 
 document.getElementById("square").onclick = () => setWaveform(structuredClone(square));
 document.getElementById("saw").onclick = () => setWaveform(structuredClone(saw));
 document.getElementById("sine").onclick = () => setWaveform(structuredClone(sine));
 
-document.getElementById("frequency").oninput = e => {
+volume.oninput = e => {
+    if(worklet)
+    {
+        worklet.port.postMessage({type: 2, data: parseInt(e.target.value)});
+    }
+}
+
+frequency.oninput = e => {
     if(worklet)
     {
         worklet.port.postMessage({type: 1, data: parseInt(e.target.value)});
